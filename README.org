@@ -1,0 +1,45 @@
+* Mailtest
+
+This tool sends test messages to a number of receivers specified in a YAML file.
+
+All the messages get a sequence number and a generated "transaction word" in
+order to make the emails easy to search for.
+
+Please keep in mind that as the "transaction word" is randomly generated it may
+end up being something offensive. If it offends you or any of the receivers or
+anybody else who happens to see the generated mails, that is simply too bad - it
+is not our problem.
+
+** Installation
+
+Add this line to your application's Gemfile:
+
+#+BEGIN_SRC ruby
+  gem 'mailtest'
+#+END_SRC
+
+And then execute:
+
+#+BEGIN_SRC shell
+  bundle
+#+END_SRC
+
+Or install it yourself as:
+
+#+BEGIN_SRC shell
+  gem install mailtest
+#+END_SRC
+
+** Usage
+
+bin/mailtest --help will give you the details on how to use it
+
+** Contributing
+
+Bug reports and pull requests are welcome on GitHub at
+https://github.com/peterhoeg/mailtest.
+
+
+** License
+
+The gem is available as open source under the terms of the [[http://opensource.org/licenses/MIT][MIT License]].
