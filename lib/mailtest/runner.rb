@@ -6,52 +6,32 @@ require 'random-word'
 require 'yaml'
 
 class Runner
-  TOKENS = %w[count index receiver timestamp word].freeze
-  TOKENS.each { |t| attr_reader t }
-
   def initialize(params)
-    extract_params!(params)
-    @logger = Logger.new(STDOUT)
-    @logger.level = Logger::DEBUG if params['debug'].value
-    @timestamp = Time.now
-    receiver = params['receiver'].value
-    @receivers = []
-    if valid_email?(receiver)
-      @logger.debug "#{receiver} is a valid email address"
-      @receivers << receiver
-    elsif File.exist?(receiver)
-      begin
-        @receivers = YAML.load_file(params['receiver'].value)
-      rescue StandardError => e
-        @logger.error e.message
-      end
-      @logger.debug "#{receiver} is a file with email addresses"
-    else
-      fail "#{receiver} is neither an email address nor a file with addresses"
-    end
-    @count = @receivers.length
+    setup_logger!(params['debug'].value)
+    setup_mail!(params)
+    setup_receivers!(params)
+    setup_tokens!(params)
+    @bar = ProgressBar.new(@receivers.count)
+    @dry_run = params['dry-run'].value
     @messages = []
-    @word = RandomWord.nouns(not_shorter_than: params['word_length'].value).next
-    @bar = ProgressBar.new(@count)
 
     create_emails!(params)
   end
 
   def run
-    return if @dry_run
-
-    @logger.info "Starting run for '#{@word}"
-
     errors = []
     success = 0
 
+    @logger.info "Sending '#{@tokens[:word]}' to #{@tokens[:count]} receivers"
+
     @messages.each do |m|
+      receivers = m.to.join(', ')
+      @logger.debug "Sending to: #{receivers}"
       begin
-        m.deliver
+        m.deliver unless @dry_run
         success += 1
       rescue StandardError => e
-        r = m.to.join(', ')
-        errors << r
+        errors << receivers
         @logger.error Rainbow(e.message).red
       ensure
         @bar.increment!
@@ -69,22 +49,70 @@ class Runner
 
   private
 
-  def create_emails!(params)
+  def setup_logger!(debug)
+    @logger = Logger.new(STDOUT)
+    @logger.level = debug ? Logger::DEBUG : Logger::INFO
+  end
+
+  def setup_mail!(params)
     Mail.defaults do
       delivery_method :smtp,
                       address: params['host'].value,
                       port: params['port'].value
     end
+  end
 
-    @receivers.each_with_index do |r, i|
-      @index = i + 1
-      receiverp = add_domain(r, @domain)
-      @receiver = receiverp # we need this for replace_tokens
+  def setup_receivers!(params)
+    @logger.debug 'Creating receiver list'
+    receivers = []
+    receiver = params['receiver'].value
+    if File.exist?(receiver)
+      begin
+        receivers = YAML.load_file(receiver)
+      rescue StandardError => e
+        @logger.error e.message
+      end
+      @logger.debug "#{receiver} is a file with email addresses"
+    elsif receiver =~ /,/
+      receivers = receiver.split(',')
+      @logger.debug "#{receiver} is a list of email addresses"
+    elsif valid_email?(receiver)
+      receivers = receiver
+      @logger.debug "#{receiver} is a valid email address"
+    else
+      raise "#{receiver} is neither an email address nor a file with addresses"
+    end
+
+    @receivers = receivers.map do |r|
+      add_or_replace_domain(r, params['domain'].value)
+    end
+
+    @logger.debug "Receivers: #{@receivers}"
+    @count = @receivers.length
+  end
+
+  def setup_tokens!(params)
+    @logger.debug 'Creating tokens'
+    length = params['word_length'].value
+    @tokens = {
+      count: @receivers.count,
+      index: 0,
+      receiver: nil,
+      timestamp: Time.now,
+      word: RandomWord.nouns(not_shorter_than: length).next
+    }
+  end
+
+  def create_emails!(params)
+    @logger.debug 'Creating mails'
+    @receivers.each_with_index do |receiver, i|
+      @tokens[:index] = i + 1
+      @tokens[:receiver] = receiver
       subjectp = replace_tokens(params['subject'].value)
       bodyp = replace_tokens(params['body'].value)
       @messages << Mail.new do
         from    params['from'].value
-        to      receiverp
+        to      receiver
         subject subjectp
         body    bodyp
         cc      params['cc'].value
@@ -93,14 +121,8 @@ class Runner
   end
 
   def color_number(number, color, color_zero = false)
-    return number.to_s if number == 0 && !color_zero
+    return number.to_s if number.zero? && !color_zero
     Rainbow(number.to_s).color(color)
-  end
-
-  def extract_params!(params)
-    %w[dry-run domain host port].each do |a|
-      eval "@#{a.tr('-', '_')}=params['#{a}'].value"
-    end
   end
 
   def show_result!(success, errors)
@@ -116,19 +138,27 @@ class Runner
   end
 
   def valid_email?(str)
-    !!(str =~ /@/)
+    !str !~ /@/
   end
 
-  def add_domain(receiver, domain)
-    return receiver if valid_email?(receiver)
-    return [receiver, domain].join('@') unless domain.nil?
-    raise ArgumentError, 'You must specify receiver and domain'
+  def add_or_replace_domain(receiver, domain)
+    if valid_email?(receiver) && domain
+      user = receiver.split('@')[0]
+      return [user, domain].join('@')
+    elsif valid_email?(receiver)
+      return receiver
+    elsif domain
+      return [receiver, domain].join('@')
+    end
+    @logger.error "Receiver: #{receiver}, domain: #{domain}"
+    raise ArgumentError, 'Unable to read/generate email address'
   end
 
   def replace_tokens(str)
     s = str
-    TOKENS.each do |t|
-      s = s.gsub("@#{t}@", send(t).to_s)
+
+    %w[count index receiver timestamp word].each do |t|
+      s = s.gsub("@#{t}@", @tokens[t.to_sym].to_s)
     end
     s
   end

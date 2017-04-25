@@ -1,3 +1,6 @@
+$stdout.sync = true
+$stderr.sync = true
+
 require 'main'
 require 'mailtest'
 
@@ -17,7 +20,7 @@ Main do
     default <<-EOF
 This is an email test. You can safely ignore this message.
 
-The following word is used to help find this message and does not mean anything: @word@
+This word does not mean anything: @word@
     EOF
     description 'The body of the message'
   end
@@ -42,7 +45,7 @@ The following word is used to help find this message and does not mean anything:
 
   option('domain') do
     argument :required
-    description 'The domain to add to the receiver list if they do not contain domains'
+    description 'The domain to add to or replace in the receiver list'
   end
 
   option('host') do
@@ -78,7 +81,6 @@ The following word is used to help find this message and does not mean anything:
   def run
     runner = Runner.new(params)
     runner.run
-    # runner.debug
     exit_success!
   end
 end

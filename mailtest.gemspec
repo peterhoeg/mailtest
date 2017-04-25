@@ -11,18 +11,10 @@ Gem::Specification.new do |spec|
   spec.email         = ['peter@hoeg.com']
 
   spec.summary       = 'Generate a test email to a list of receivers.'
-  spec.description   = 'This gem helps when doing mass email changes or migrations where you need to verify that everything is set up correctly.'
+  spec.description   = 'Helps when doing mass email changes or migrations\
+ where you need to verify that everything is set up correctly.'
   spec.homepage      = 'https://github.com/peterhoeg/mailtest'
   spec.license       = 'MIT'
-
-  # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
-  # to allow pushing to a single host or delete this section to allow pushing to any host.
-  if spec.respond_to?(:metadata)
-    spec.metadata['allowed_push_host'] = "TODO: Set to 'http://mygemserver.com'"
-  else
-    raise 'RubyGems 2.0 or newer is required to protect against ' \
-      'public gem pushes.'
-  end
 
   spec.files = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
