@@ -2,10 +2,9 @@ require 'main'
 require 'mailtest'
 
 Main do
-  argument('file') do
+  argument('receiver') do
     required
-    description 'The file with the list of receivers'
-    validate { |a| File.exist?(a) }
+    description 'An email address or the file with the list of receivers'
   end
 
   argument('from') do
@@ -64,6 +63,11 @@ The following word is used to help find this message and does not mean anything:
     cast :int
     default 20
     description 'Minimum length of the random word used'
+  end
+
+  option('debug') do
+    cast :bool
+    description 'Enter debugging mode'
   end
 
   option('dry-run') do

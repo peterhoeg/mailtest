@@ -12,12 +12,22 @@ class Runner
   def initialize(params)
     extract_params!(params)
     @logger = Logger.new(STDOUT)
+    @logger.level = Logger::DEBUG if params['debug'].value
     @timestamp = Time.now
-    @receivers = {}
-    begin
-      @receivers = YAML.load_file(params['file'].value)
-    rescue StandardError => e
-      @logger.error e.message
+    receiver = params['receiver'].value
+    @receivers = []
+    if valid_email?(receiver)
+      @logger.debug "#{receiver} is a valid email address"
+      @receivers << receiver
+    elsif File.exist?(receiver)
+      begin
+        @receivers = YAML.load_file(params['receiver'].value)
+      rescue StandardError => e
+        @logger.error e.message
+      end
+      @logger.debug "#{receiver} is a file with email addresses"
+    else
+      fail "#{receiver} is neither an email address nor a file with addresses"
     end
     @count = @receivers.length
     @messages = []
@@ -105,8 +115,12 @@ class Runner
     end
   end
 
+  def valid_email?(str)
+    !!(str =~ /@/)
+  end
+
   def add_domain(receiver, domain)
-    return receiver if receiver =~ /@/
+    return receiver if valid_email?(receiver)
     return [receiver, domain].join('@') unless domain.nil?
     raise ArgumentError, 'You must specify receiver and domain'
   end
