@@ -1,4 +1,5 @@
-require 'mailtest/cli'
+$VERBOSE = nil
+
 require 'mailtest/runner'
 require 'mailtest/version'
 

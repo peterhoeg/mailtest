@@ -22,11 +22,11 @@ class Runner
     errors = []
     success = 0
 
-    @logger.info "Sending '#{@tokens[:word]}' to #{@tokens[:count]} receivers"
+    @logger.info "Sending '#{@tokens[:word]}' to #{@tokens[:count]} recipient(s)"
 
-    @messages.each do |m|
+    @messages.each_with_index do |m, i|
       receivers = m.to.join(', ')
-      @logger.debug "Sending to: #{receivers}"
+      @logger.debug "Sending to: #{receivers} #{x_of_y(i)}"
       begin
         m.deliver unless @dry_run
         success += 1
@@ -77,7 +77,8 @@ class Runner
       receivers = receiver.split(',')
       @logger.debug "#{receiver} is a list of email addresses"
     elsif valid_email?(receiver)
-      receivers = receiver
+      # we expect an array
+      receivers << receiver
       @logger.debug "#{receiver} is a valid email address"
     else
       raise "#{receiver} is neither an email address nor a file with addresses"
@@ -161,5 +162,9 @@ class Runner
       s = s.gsub("@#{t}@", @tokens[t.to_sym].to_s)
     end
     s
+  end
+
+  def x_of_y(x)
+    "[#{x + 1}/#{@tokens[:count]}]"
   end
 end
