@@ -31,6 +31,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'mail'
   spec.add_dependency 'main'
+  spec.add_dependency 'activesupport'
   spec.add_dependency 'awesome_print'
   spec.add_dependency 'progress_bar'
   spec.add_dependency 'rainbow'

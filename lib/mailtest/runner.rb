@@ -1,3 +1,4 @@
+require 'active_support/hash_with_indifferent_access'
 require 'ap'
 require 'mail'
 require 'progress_bar'
@@ -7,7 +8,8 @@ require 'yaml'
 
 class Runner
   def initialize(params)
-    setup_logger!(params['debug'].value)
+    params = ActiveSupport::HashWithIndifferentAccess.new params
+    setup_logger!(params[:debug].value)
     setup_mail!(params)
     setup_receivers!(params)
     setup_tokens!(params)
@@ -57,15 +59,15 @@ class Runner
   def setup_mail!(params)
     Mail.defaults do
       delivery_method :smtp,
-                      address: params['host'].value,
-                      port: params['port'].value
+        address: params[:host].value,
+        port: params[:port].value
     end
   end
 
   def setup_receivers!(params)
     @logger.debug 'Creating receiver list'
     receivers = []
-    receiver = params['receiver'].value
+    receiver = params[:receiver].value
     if File.exist?(receiver)
       begin
         receivers = YAML.load_file(receiver)
@@ -85,7 +87,7 @@ class Runner
     end
 
     @receivers = receivers.map do |r|
-      add_or_replace_domain(r, params['domain'].value)
+      add_or_replace_domain(r, params[:domain].value)
     end
 
     @logger.debug "Receivers: #{@receivers}"
@@ -94,7 +96,7 @@ class Runner
 
   def setup_tokens!(params)
     @logger.debug 'Creating tokens'
-    length = params['word_length'].value
+    length = params[:word_length].value
     @tokens = {
       count: @receivers.count,
       index: 0,
@@ -109,14 +111,14 @@ class Runner
     @receivers.each_with_index do |receiver, i|
       @tokens[:index] = i + 1
       @tokens[:receiver] = receiver
-      subjectp = replace_tokens(params['subject'].value)
-      bodyp = replace_tokens(params['body'].value)
+      subjectp = replace_tokens(params[:subject].value)
+      bodyp = replace_tokens(params[:body].value)
       @messages << Mail.new do
-        from    params['from'].value
+        from    params[:from].value
         to      receiver
         subject subjectp
         body    bodyp
-        cc      params['cc'].value
+        cc      params[:cc].value
       end
     end
   end

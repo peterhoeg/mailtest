@@ -18,9 +18,9 @@ Main do
   option('body') do
     argument :required
     default <<-EOF
-This is an email test. You can safely ignore this message.
+You can safely ignore this message and no reply is necessary.
 
-This word does not mean anything: @word@
+As this is an email test, this word does not mean anything: @word@
     EOF
     description 'The body of the message'
   end
