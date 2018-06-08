@@ -97,13 +97,13 @@ class Runner
   def setup_tokens!(params)
     @logger.debug 'Creating tokens'
     length = params[:word_length].value
-    @tokens = {
+    @tokens = ActiveSupport::HashWithIndifferentAccess.new(
       count: @receivers.count,
       index: 0,
       receiver: nil,
       timestamp: Time.now,
       word: RandomWord.nouns(not_shorter_than: length).next
-    }
+    )
   end
 
   def create_emails!(params)
@@ -159,9 +159,12 @@ class Runner
 
   def replace_tokens(str)
     s = str
-
-    %w[count index receiver timestamp word].each do |t|
-      s = s.gsub("@#{t}@", @tokens[t.to_sym].to_s)
+    pad = @tokens[:count].to_s.length
+    %i[count receiver timestamp word].each do |t|
+      s = s.gsub("@#{t}@", @tokens[t].to_s)
+    end
+    %i[index].each do |t|
+      s = s.gsub("@#{t}@", @tokens[t].to_s.rjust(pad, '0'))
     end
     s
   end
