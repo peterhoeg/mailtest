@@ -20,7 +20,7 @@ Main do
     default <<-EOF
 You can safely ignore this message and no reply is necessary.
 
-As this is an email test, this word does not mean anything: @word@
+This is an email test and this word was randomly generated and does not mean anything: @word@
     EOF
     description 'The body of the message'
   end
