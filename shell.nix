@@ -1,14 +1,14 @@
 with import <nixpkgs> {};
 
 let
-  myRuby = pkgs.ruby;
-  bundler = pkgs.bundler.override { ruby = myRuby; };
+  ruby = pkgs.ruby;
+  bundler = pkgs.bundler.override { inherit ruby; };
 
 in stdenv.mkDerivation rec {
   name = "env";
   buildInputs = [
     libxml2
-    myRuby
+    ruby
   ];
 
   nativeBuildInputs = [
