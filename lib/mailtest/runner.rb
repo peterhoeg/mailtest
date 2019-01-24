@@ -86,7 +86,9 @@ class Runner
       raise "#{receiver} is neither an email address nor a file with addresses"
     end
 
-    @receivers = receivers.map do |r|
+    @logger.error "Empty receiver list" if receivers.nil? || receivers.empty?
+
+    @receivers = receivers.sort.map do |r|
       add_or_replace_domain(r, params[:domain].value)
     end
 
